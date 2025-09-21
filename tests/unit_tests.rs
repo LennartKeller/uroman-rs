@@ -4,7 +4,7 @@ use uroman::{Uroman, rom_format};
 fn assert_romanizes_to_str(uroman: &Uroman, input: &str, lcode: Option<&str>, expected_str: &str) {
     let result = uroman.romanize_string::<rom_format::Str>(input, lcode);
 
-    assert_eq!(result.to_output_string(), expected_str);
+    assert_eq!(result.to_string(), expected_str);
 }
 
 #[track_caller]
@@ -16,7 +16,7 @@ fn assert_romanizes_to_str_with_decode(
 ) {
     let result = uroman.romanize_escaped::<rom_format::Str>(input, lcode);
 
-    assert_eq!(result.to_output_string(), expected_str);
+    assert_eq!(result.to_string(), expected_str);
 }
 
 #[test]

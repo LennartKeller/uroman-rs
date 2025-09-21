@@ -1,4 +1,4 @@
-use crate::{Uroman, Value};
+use crate::core::{UromanInner, Value};
 use num_rational::Ratio;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -81,7 +81,7 @@ impl Edge {
     }
 
     /// Creates an initial numeric edge from `uroman.num_props`.
-    pub fn new_numeric(start: usize, end: usize, char: char, uroman: &Uroman) -> Option<Self> {
+    pub(crate) fn new_numeric(start: usize, end: usize, char: char, uroman: &UromanInner) -> Option<Self> {
         let props_map = uroman.num_props.get(&char.to_string())?;
 
         let rom_text = props_map

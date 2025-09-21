@@ -158,7 +158,7 @@ fn process_direct_input(
         } else {
             uroman.romanize_escaped_with_format(s, lcode, rom_format)
         };
-        writeln!(writer, "{}", result.to_output_string()?)?;
+        writeln!(writer, "{}", result.to_string()?)?;
     }
     Ok(())
 }
@@ -238,7 +238,7 @@ fn run_repl(uroman: &Uroman, cli: &Cli) -> Result<(), UromanError> {
 
                 match uroman
                     .romanize_with_format(&line, lcode, Some(cli.rom_format.into()))
-                    .to_output_string()
+                    .to_string()
                 {
                     Ok(output) => println!("{output}"),
                     Err(e) => eprintln!("Error formatting output: {e}"),
@@ -309,7 +309,7 @@ fn show_samples(uroman: &Uroman) -> Result<(), UromanError> {
         let start = time::Instant::now();
         let romanized = uroman
             .romanize_string::<rom_format::Str>(text, Some(lang_code))
-            .to_output_string();
+            .to_string();
         let duration = start.elapsed();
         total_duration_ns += duration.as_nanos();
 

@@ -11,14 +11,14 @@ fn main() {
     // Str output
     let result = uroman
         .romanize_string::<rom_format::Str>(s, lcode)
-        .to_output_string();
+        .to_string();
 
     let result_f = uroman.romanize_with_format(
         s,
         lcode,
         None, // `None` defaults to `RomFormat::Str`.
         // RomFormat::Str,
-    ).to_output_string();
+    ).to_string();
 
     // This unwrap is safe because `RomFormat::Str` never fails.
     // If you prefer to avoid `.unwrap()`, use `romanize_string`.
@@ -29,12 +29,12 @@ fn main() {
     // Lattice output
     let result = uroman
         .romanize_string::<rom_format::Lattice>(s, lcode)
-        .to_output_string()
+        .to_string()
         .unwrap();
 
     let result_f = uroman
         .romanize_with_format(s, lcode, Some(RomFormat::Lattice))
-        .to_output_string()
+        .to_string()
         .unwrap();
 
     assert_eq!(result, result_f);

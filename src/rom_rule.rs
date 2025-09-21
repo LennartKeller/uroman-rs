@@ -3,10 +3,9 @@
 use indexmap::IndexMap;
 
 use crate::{
-    Uroman,
-    utils::{
+    core::UromanInner, utils::{
         dequote_string, has_value_in_double_colon_del_list, slot_value_in_double_colon_del_list,
-    },
+    }
 };
 
 #[allow(unused)]
@@ -24,7 +23,7 @@ pub(super) struct RomRule {
     pub use_only_for_whole_word: bool,
     pub n_restr: usize,
     pub t_alts: Vec<String>,
-    pub num: Option<crate::Value>,
+    pub num: Option<crate::core::Value>,
     pub is_minus_sign: bool,
     pub is_plus_sign: bool,
     pub is_decimal_point: bool,
@@ -77,7 +76,7 @@ impl RomRule {
         line: &str,
         provenance: &str,
         file_format: &str,
-        uroman: &mut Uroman,
+        uroman: &mut UromanInner,
     ) -> Option<Self> {
         let (s, t) = if file_format == "u2r" {
             let u_str = slot_value_in_double_colon_del_list(line, "u")?;

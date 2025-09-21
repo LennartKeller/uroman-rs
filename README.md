@@ -16,7 +16,7 @@
 
 As a reimplementation, it is designed to be a drop-in replacement that passes the original's comprehensive test suite. This means its romanization logic, including its strengths and limitations, is identical to the original. For effective use, we recommend reviewing the original authors' documentation on [Reversibility](https://github.com/isi-nlp/uroman?tab=readme-ov-file#reversibility) and [Known Limitations](https://github.com/isi-nlp/uroman?tab=readme-ov-file#limitations).
 
-In the same spirit of fidelity, this project respects the licensing of the original `uroman` software. `uroman-rs` is licensed under the Apache License 2.0, and includes the original's license as required. For full details, please refer to the [License section](#license-and-acknowledgements).
+In the same spirit of fidelity, this project respects the licensing of the original `uroman` software. `uroman-rs` is licensed under the Apache License 2.0, and includes the original's license as required. For full details, please refer to the [License section](#license).
 
 ## Features
 
@@ -93,7 +93,7 @@ let uroman = Uroman::new();
 let romanized_string/*: String*/ = uroman.romanize_string::<rom_format::Str>(
     "✨ユーロマン✨",
     Some("jpn"),
-).to_output_string();
+).to_string();
 
 assert_eq!(romanized_string, "✨yuuroman✨");
 println!("{romanized_string}");

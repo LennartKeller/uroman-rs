@@ -1,7 +1,8 @@
 use crate::decompositions::DECOMPOSITIONS;
 use crate::edge::{Edge, EdgeData, NumData, NumDataUpdates};
 use crate::rom_rule::RomRule;
-use crate::{AbugidaCacheEntry, Uroman, rom_format};
+use crate::{Uroman, rom_format};
+use crate::core::{AbugidaCacheEntry, UromanInner};
 use num_rational::Ratio;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -36,10 +37,10 @@ static STARTS_WITH_DIGIT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d
 static ENDS_WITH_DIGIT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d$").unwrap());
 
 static GOOD_PREFIX_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"'?(?:.|bd|br|brg|brgy|bs|bsh|bst|bt|bts|by|bz|bzh|ch|db|dby|dk|dm|dp|dpy|dr|gl|gn|gr|gs|gt|gy|gzh|kh|khr|khy|kr|ky|ld|lh|lt|mkh|mny|mth|mtsh|ny|ph|phr|phy|rgy|rk|el|rn|rny|rt|rts|sk|skr|sky|sl|sm|sn|sny|sp|spy|sr|st|th|ts|tsh)$").unwrap()
+    Regex::new(r"^'?(?:.|bd|br|brg|brgy|bs|bsh|bst|bt|bts|by|bz|bzh|ch|db|dby|dk|dm|dp|dpy|dr|gl|gn|gr|gs|gt|gy|gzh|kh|khr|khy|kr|ky|ld|lh|lt|mkh|mny|mth|mtsh|ny|ph|phr|phy|rgy|rk|el|rn|rny|rt|rts|sk|skr|sky|sl|sm|sn|sny|sp|spy|sr|st|th|ts|tsh)$").unwrap()
 });
 static GOOD_SUFFIX_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?:|[bcdfghjklmnpqrstvwxz]|bh|bs|ch|cs|dd|ddh|dh|dz|dzh|gh|gr|gs|kh|khs|kss|n|nn|nt|ms|ng|ngs|ns|ph|rm|sh|ss|th|ts|tsh|tt|tth|zh|zhs)'?$").unwrap()
+    Regex::new(r"^(?:|[bcdfghjklmnpqrstvwxz]|bh|bs|ch|cs|dd|ddh|dh|dz|dzh|gh|gr|gs|kh|khs|kss|n|nn|nt|ms|ng|ngs|ns|ph|rm|sh|ss|th|ts|tsh|tt|tth|zh|zhs)'?$").unwrap()
 });
 static ROM_SUFFIX_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\bc:([a-zA-Z]+)\s+s:([a-zA-Z]+)\b").unwrap());
@@ -56,7 +57,7 @@ pub(super) struct Lattice<'a> {
     pub s: String,
     pub s_chars: Vec<char>,
     pub lcode: Option<String>,
-    pub uroman: &'a Uroman,
+    pub uroman: &'a UromanInner,
 
     // self.lattice[(edge.start, edge.end)]
     pub edge_lattice: HashMap<(usize, usize), HashSet<Edge>>,
@@ -84,7 +85,7 @@ pub enum BackwardsPathResult {
 }
 
 impl<'a> Lattice<'a> {
-    pub fn new(s: &'a str, uroman: &'a Uroman, lcode: Option<&str>) -> Self {
+    pub fn new(s: &'a str, uroman: &'a UromanInner, lcode: Option<&str>) -> Self {
         let s_chars: Vec<char> = s.chars().collect();
         let max_vertex = s_chars.len();
 
@@ -695,9 +696,9 @@ impl<'a> Lattice<'a> {
                 && !decomp_s.is_empty()
             {
                 rom = Some(
-                    self.uroman
+                    Uroman::new()
                         .romanize_string::<rom_format::Str>(decomp_s, None)
-                        .to_output_string(),
+                        .to_string(),
                 );
             }
 
@@ -850,7 +851,8 @@ impl<'a> Lattice<'a> {
                         } else {
                             let good_prefix = GOOD_PREFIX_RE.is_match(&pre);
                             let good_suffix = GOOD_SUFFIX_RE.is_match(&post);
-                            let subjoined_suffix = positions[idx + 2..]
+                            let suffix_slice = positions.get(idx + 2..).unwrap_or(&[]);
+                            let subjoined_suffix = suffix_slice
                                 .iter()
                                 .all(|p| subjoined_letter_positions.contains(p));
 
@@ -1696,47 +1698,59 @@ impl<'a> Lattice<'a> {
         };
 
         let cache_key = (script_name.clone(), rom.clone());
-        let cache_entry = if let Some(entry) = self.uroman.abugida_cache.borrow().get(&cache_key) {
-            entry.clone()
-        } else {
-            let mut base_rom: Option<String>;
-            let mut base_rom_plus_vowel: Option<String>;
-            let mut modified_rom = rom.clone();
-
-            if let Some(caps) = re1.captures(&rom) {
-                base_rom = Some(caps[1].to_string());
-                base_rom_plus_vowel = Some(format!("{}{}", &caps[1], &caps[2]));
-            } else if let Some(caps) = re2.captures(&rom) {
-                base_rom = Some(caps[1].to_string());
-                base_rom_plus_vowel = Some(format!("{}{}", &caps[1], &caps[2]));
-                if rom.ends_with('-')
-                    && start + 1 == end
-                    && rom.chars().next().is_some_and(|c| c.is_alphabetic())
-                {
-                    modified_rom.pop();
-                }
+        let cache_entry = {
+            let reader = self.uroman.abugida_cache.read().unwrap();
+            if let Some(entry) = reader.get(&cache_key) {
+                entry.clone()
             } else {
-                base_rom = Some(rom.clone());
-                base_rom_plus_vowel = Some(format!("{}{}", rom, &script.abugida_default_vowels[0]));
-            }
+                drop(reader);
 
-            if let Some(br) = &base_rom
-                && !(ABUGIDA_CONSONANT_RE.is_match(br) || (script_name == "Tibetan" && br == "'"))
-            {
-                base_rom = None;
-                base_rom_plus_vowel = None;
-            }
+                let mut writer = self.uroman.abugida_cache.write().unwrap();
 
-            let entry = AbugidaCacheEntry {
-                base_rom,
-                base_rom_plus_vowel,
-                modified_rom,
-            };
-            self.uroman
-                .abugida_cache
-                .borrow_mut()
-                .insert(cache_key, entry.clone());
-            entry
+                if let Some(entry) = writer.get(&cache_key) {
+                    entry.clone()
+                } else {
+                    let mut base_rom: Option<String>;
+                    let mut base_rom_plus_vowel: Option<String>;
+                    let mut modified_rom = rom.clone();
+
+                    if let Some(caps) = re1.captures(&rom) {
+                        base_rom = Some(caps[1].to_string());
+                        base_rom_plus_vowel = Some(format!("{}{}", &caps[1], &caps[2]));
+                    } else if let Some(caps) = re2.captures(&rom) {
+                        base_rom = Some(caps[1].to_string());
+                        base_rom_plus_vowel = Some(format!("{}{}", &caps[1], &caps[2]));
+                        if rom.ends_with('-')
+                            && start + 1 == end
+                            && rom.chars().next().is_some_and(|c| c.is_alphabetic())
+                        {
+                            modified_rom.pop();
+                        }
+                    } else {
+                        base_rom = Some(rom.clone());
+                        base_rom_plus_vowel =
+                            Some(format!("{}{}", rom, &script.abugida_default_vowels[0]));
+                    }
+
+                    if let Some(br) = &base_rom
+                        && !(ABUGIDA_CONSONANT_RE.is_match(br)
+                            || (script_name == "Tibetan" && br == "'"))
+                        {
+                            base_rom = None;
+                            base_rom_plus_vowel = None;
+                        }
+
+                    let new_entry = AbugidaCacheEntry {
+                        base_rom,
+                        base_rom_plus_vowel,
+                        modified_rom,
+                    };
+
+                    writer.insert(cache_key, new_entry.clone());
+
+                    new_entry
+                }
+            }
         };
 
         rom = cache_entry.modified_rom;
