@@ -27,6 +27,9 @@ mod lattice;
 mod rom_rule;
 mod utils;
 
+#[cfg(feature = "python")]
+mod python;
+
 use rom_rule::RomRule;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

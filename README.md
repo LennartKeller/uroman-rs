@@ -12,6 +12,8 @@
 
 ## Overview
 
+(This forks adds Python bindings via maturin, see [PYTHON.md](PYTHON.md) for more information.)
+
 `uroman-rs` is a complete rewrite of the original `uroman` (Universal Romanizer) in Rust. It provides high-speed, accurate romanization for a vast number of languages and writing systems, faithfully reproducing the behavior of the original implementation.
 
 As a reimplementation, it is designed to be a drop-in replacement that passes the original's comprehensive test suite. This means its romanization logic, including its strengths and limitations, is identical to the original. For effective use, we recommend reviewing the original authors' documentation on [Reversibility](https://github.com/isi-nlp/uroman?tab=readme-ov-file#reversibility) and [Known Limitations](https://github.com/isi-nlp/uroman?tab=readme-ov-file#limitations).
@@ -41,7 +43,7 @@ cargo install uroman
 
 This will install the executable as `uroman-rs` on your system.
 
-### As a Library
+### As a Rust Library
 
 Add `uroman-rs` to your project's Cargo.toml.
 For library usage, it's recommended to disable default features to avoid pulling in CLI-specific dependencies.
@@ -49,6 +51,22 @@ For library usage, it's recommended to disable default features to avoid pulling
 ```bash
 cargo add uroman --no-default-features
 ```
+
+### As a Python Library
+
+Install the Python bindings from PyPI (once published):
+
+```bash
+pip install git+https://https://github.com/LennartKeller/uroman-rs.git
+```
+
+Or build from source:
+
+```bash
+u build
+```
+
+See [PYTHON.md](PYTHON.md) for detailed Python API documentation.
 
 ## Usage
 
@@ -84,7 +102,7 @@ hallo world
 ```
 
 
-### Library
+### Rust Library
 
 ```rust
 // Uroman::new() is infallible and does not return a `Result`.
@@ -99,6 +117,26 @@ assert_eq!(romanized_string, "✨yuuroman✨");
 println!("{romanized_string}");
 ```
 For more advanced examples, please see the examples/ directory.
+
+### Python Library
+
+```python
+from uroman_rs import Uroman
+
+# Create a Uroman instance
+uroman = Uroman()
+
+# Romanize text
+result = uroman.romanize("✨ユーロマン✨", lcode="jpn")
+print(result)  # "✨yuuroman✨"
+
+# Or use the convenience function
+import uroman_rs
+result = uroman_rs.romanize("こんにちは")
+print(result)  # "konnichiha"
+```
+
+See [PYTHON.md](PYTHON.md) for complete Python API documentation and examples.
 
 ## Benchmark
 
