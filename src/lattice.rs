@@ -1912,7 +1912,6 @@ impl<'a> Lattice<'a> {
         if end - start == 1
             && rom.chars().all(|c| c.is_uppercase())
             && next_char.is_some_and(|nc| nc.is_lowercase())
-            && let Some(first) = rom.chars().next()
         {
             // rom = first.to_uppercase().to_string() + &rom[1..].to_lowercase();
             rom = capitalize(&rom);
