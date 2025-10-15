@@ -1912,7 +1912,10 @@ impl<'a> Lattice<'a> {
             && next_char.is_some_and(|nc| nc.is_lowercase())
             && let Some(first) = rom.chars().next()
         {
-            rom = first.to_uppercase().to_string() + &rom[1..].to_lowercase();
+            // rom = first.to_uppercase().to_string() + &rom[1..].to_lowercase();
+            let slice_position = rom.char_indices().nth(1).unwrap().0;
+            rom = first.to_uppercase().to_string() + &rom[slice_position..].to_lowercase();
+
         }
 
         // Python: if (prev_char and prev_char in 'っッ\u0A71') ...
