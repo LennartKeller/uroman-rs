@@ -3,6 +3,7 @@ use crate::edge::{Edge, EdgeData, NumData, NumDataUpdates};
 use crate::rom_rule::RomRule;
 use crate::{Uroman, rom_format};
 use crate::core::{AbugidaCacheEntry, UromanInner};
+use crate::utils::capitalize;
 use num_rational::Ratio;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -52,6 +53,7 @@ static THAI_CONSONANT_XZ_END_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[bcdfghjklmnpqrstvwxz]+$").unwrap());
 static THAI_CONSONANT_XZ_ONLY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[bcdfghjklmnpqrstvwxz]+$").unwrap());
+
 
 pub(super) struct Lattice<'a> {
     pub s: String,
@@ -1913,9 +1915,7 @@ impl<'a> Lattice<'a> {
             && let Some(first) = rom.chars().next()
         {
             // rom = first.to_uppercase().to_string() + &rom[1..].to_lowercase();
-            let slice_position = rom.char_indices().nth(1).unwrap().0;
-            rom = first.to_uppercase().to_string() + &rom[slice_position..].to_lowercase();
-
+            rom = capitalize(&rom);
         }
 
         // Python: if (prev_char and prev_char in 'っッ\u0A71') ...
