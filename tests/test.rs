@@ -1,15 +1,13 @@
 use assert_cmd::prelude::*;
-use std::fs::{self, File};
 use std::process::Command;
 
-fn assert_uroman_output(input_path: &str, expected_output_path: &str) {
-    let expected_output = fs::read_to_string(expected_output_path)
-        .unwrap_or_else(|_| panic!("could not read expected output file: {expected_output_path}"));
-
+fn assert_uroman_output(input_path: &str, expected_output: &str) {
     let expected_output_normalized = expected_output.replace("\r\n", "\n");
 
-    let input = File::open(input_path).unwrap();
-    let cmd = Command::new("uroman-rs").stdin(input).unwrap();
+    let cmd = Command::new("uroman-rs")
+        .arg("-i")
+        .arg(input_path)
+        .unwrap();
     let output = cmd
         .assert()
         .success()
@@ -26,6 +24,6 @@ fn assert_uroman_output(input_path: &str, expected_output_path: &str) {
 fn test_multi_script_romanization() {
     assert_uroman_output(
         "tests/test/multi-script.txt",
-        "tests/test/multi-script.uroman-ref.txt",
+        include_str!("test/multi-script.uroman-ref.txt"),
     );
 }
