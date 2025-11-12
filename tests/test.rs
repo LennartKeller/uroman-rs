@@ -1,24 +1,22 @@
-use assert_cmd::prelude::*;
-use std::fs::{self, File};
-use std::process::Command;
+use uroman::{RomFormat, Uroman};
+use std::{fs::File, io::BufReader};
 
-fn assert_uroman_output(input_path: &str, expected_output_path: &str) {
-    let expected_output = fs::read_to_string(expected_output_path)
-        .unwrap_or_else(|_| panic!("could not read expected output file: {expected_output_path}"));
-
+fn assert_uroman_output(input_path: &str, expected_output: &str) {
     let expected_output_normalized = expected_output.replace("\r\n", "\n");
 
-    let mut cmd = Command::cargo_bin("uroman-rs").unwrap();
-    let input = File::open(input_path).unwrap();
-    let output = cmd
-        .stdin(input)
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let uroman = Uroman::new();
+    let mut buf = vec![];
+    uroman.romanize_file(
+        BufReader::new(File::open(input_path).unwrap()),
+        &mut buf,
+        None,
+        RomFormat::Str,
+        None,
+        false,
+        false,
+    ).unwrap();
 
-    let actual_output_normalized = String::from_utf8(output).unwrap().replace("\r\n", "\n");
+    let actual_output_normalized = String::from_utf8(buf).unwrap().replace("\r\n", "\n");
 
     assert_eq!(actual_output_normalized, expected_output_normalized);
 }
@@ -26,7 +24,7 @@ fn assert_uroman_output(input_path: &str, expected_output_path: &str) {
 #[test]
 fn test_multi_script_romanization() {
     assert_uroman_output(
-        "tests/test/multi-script.txt",
-        "tests/test/multi-script.uroman-ref.txt",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test/multi-script.txt"),
+        include_str!("test/multi-script.uroman-ref.txt"),
     );
 }
